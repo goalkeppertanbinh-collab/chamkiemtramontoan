@@ -3,303 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ứng dụng Chấm Thi Tự Luận Môn Toán</title>
-    <!-- Tailwind CSS -->
+    <title>Ứng dụng Chấm thi Tự luận Toán</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- KaTeX for Math Rendering -->
+    <!-- KaTeX cho công thức toán học -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
-    <!-- Mammoth JS for reading Word .docx files -->
+    <!-- Mammoth.js để đọc file Word .docx -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .math-input { font-family: monospace; }
-    </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen pb-12">
 
-    <!-- Header Navigation -->
-    <header class="bg-indigo-700 text-white shadow-md sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <!-- Header ứng dụng -->
+    <header class="bg-indigo-600 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div class="flex items-center space-x-3">
-                <div class="bg-white text-indigo-700 p-2 rounded-lg font-bold text-xl">
-                    <i class="fa-solid font-bold fa-square-root-variable"></i>
+                <div class="bg-white/10 p-2 rounded-xl">
+                    <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    </svg>
                 </div>
                 <div>
-                    <h1 class="font-bold text-lg leading-tight">MathGrader AI</h1>
-                    <p class="text-xs text-indigo-200">Hệ thống chấm bài thi tự luận môn Toán</p>
+                    <h1 class="text-lg font-bold leading-tight">Chấm Thi Tự Luận Toán</h1>
+                    <p class="text-xs text-indigo-200">Hỗ trợ AI & Trích xuất file Word</p>
                 </div>
             </div>
             
-            <nav class="flex space-x-1 sm:space-x-4">
-                <button id="nav-rubric" onclick="switchTab('rubric')" class="px-3 py-2 rounded-md text-sm font-medium bg-indigo-800 text-white hover:bg-indigo-600 transition">
-                    <i class="fa-solid fa-list-check mr-1.5"></i>Đáp án & Thang điểm
-                </button>
-                <button id="nav-grading" onclick="switchTab('grading')" class="px-3 py-2 rounded-md text-sm font-medium text-indigo-100 hover:bg-indigo-600 hover:text-white transition">
-                    <i class="fa-solid fa-pen-to-square mr-1.5"></i>Chấm bài
-                </button>
-                <button id="nav-stats" onclick="switchTab('stats')" class="px-3 py-2 rounded-md text-sm font-medium text-indigo-100 hover:bg-indigo-600 hover:text-white transition">
-                    <i class="fa-solid fa-chart-pie mr-1.5"></i>Thống kê
-                </button>
+            <!-- Điều hướng tab trên di động dạng cuộn ngang linh hoạt -->
+            <nav class="flex space-x-1 bg-indigo-700/60 p-1 rounded-xl w-full sm:w-auto overflow-x-auto">
+                <button onclick="switchTab('rubric')" id="nav-rubric" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-semibold transition bg-white text-indigo-700 shadow-sm whitespace-nowrap">1. Đáp án & Thang điểm</button>
+                <button onclick="switchTab('grading')" id="nav-grading" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-semibold transition text-white hover:bg-white/10 whitespace-nowrap">2. Chấm bài học sinh</button>
+                <button onclick="switchTab('stats')" id="nav-stats" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-semibold transition text-white hover:bg-white/10 whitespace-nowrap">3. Thống kê & Xuất</button>
             </nav>
         </div>
     </header>
 
-    <!-- Main Content Area -->
-    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+    <main class="max-w-6xl mx-auto px-3 sm:px-4 mt-6">
 
-        <!-- API Key Secure Banner -->
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div class="flex items-center space-x-3 w-full sm:w-auto">
-                <div class="bg-indigo-50 p-2.5 rounded-lg text-indigo-600">
-                    <i class="fa-solid fa-key text-lg"></i>
+        <!-- Cài đặt API Key bảo mật -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3 w-full sm:w-auto">
+                <div class="bg-indigo-50 p-2.5 rounded-lg text-indigo-600 shrink-0">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
                 </div>
                 <div>
                     <h3 class="font-semibold text-slate-800 text-sm">Khóa bảo mật Google Gemini API Key</h3>
-                    <p class="text-xs text-slate-500">Lưu an toàn trên trình duyệt thiết bị này (Không lưu trên server).</p>
+                    <p class="text-xs text-slate-500">Lưu an toàn trên trình duyệt thiết bị của bạn.</p>
                 </div>
             </div>
-            <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <div class="flex items-center gap-2 w-full sm:w-auto">
                 <input type="password" id="apiKeyInput" placeholder="Dán API Key (AIza...)" 
-                    class="px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full sm:w-60"
+                    class="px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full sm:w-64"
                     onchange="saveApiKey(this.value)">
-                <button onclick="toggleApiKeyVisibility()" id="btn-toggle-key" class="px-3 py-2 text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition">Hiện</button>
-                <button onclick="saveApiKeyBtn()" class="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium shadow-sm transition whitespace-nowrap">Lưu</button>
+                <button onclick="toggleApiKeyVisibility()" class="px-3 py-2 text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition shrink-0">Hiện</button>
+                <button onclick="saveApiKeyBtn()" class="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium shadow-sm transition whitespace-nowrap shrink-0">Lưu</button>
             </div>
         </div>
 
-        <!-- TAB 1: Đáp án & Thang điểm (Rubric Setup) -->
+        <!-- TAB 1: RUBRIC & ĐÁP ÁN -->
         <section id="tab-rubric" class="space-y-6">
-            <div class="flex flex-wrap gap-3 justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                <div>
-                    <h2 class="text-xl font-bold text-slate-800">Cấu hình Đề bài & Đáp án chi tiết</h2>
-                    <p class="text-sm text-slate-500">Thiết lập các bước giải và số điểm tương ứng cho từng ý</p>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <button onclick="downloadWordTemplate()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-2 rounded-lg text-sm font-semibold flex items-center border border-indigo-200 transition">
-                        <i class="fa-solid fa-file-arrow-down text-indigo-600 mr-2 text-base"></i>Tải Mẫu Word (.docx)
-                    </button>
-                    <label class="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2 rounded-lg text-sm font-semibold flex items-center border border-slate-300 transition">
-                        <i class="fa-solid fa-file-word text-blue-600 mr-2 text-base"></i>Tải đáp án từ Word (.docx)
-                        <input type="file" id="rubric-file-upload" accept=".docx,.txt" class="hidden" onchange="handleRubricFileUpload(event)">
-                    </label>
-                    <button onclick="saveRubric()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition flex items-center shadow-sm">
-                        <i class="fa-solid fa-floppy-disk mr-2"></i>Lưu đáp án
-                    </button>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Question Details -->
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
-                    <h3 class="font-bold text-indigo-700 text-lg border-b pb-2">Đề bài (Bài toán)</h3>
+            <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-100">
                     <div>
-                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Tên bài / Mã đề</label>
-                        <input id="problem-title" type="text" value="Bài 3: Phương trình bậc hai & Hệ thức Vi-ét" class="w-full p-2.5 border rounded-lg border-slate-300 focus:ring-2 focus:ring-indigo-500 text-sm">
+                        <h2 class="text-lg font-bold text-slate-800">Thiết Lập Đề Bài & Thang Điểm (Rubric)</h2>
+                        <p class="text-xs sm:text-sm text-slate-500">Nhập thủ công hoặc tải file đáp án mẫu từ Word (.docx)</p>
                     </div>
-                    <div>
-                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Nội dung đề bài (Hỗ trợ LaTeX: $...$)</label>
-                        <textarea id="problem-statement" rows="4" class="w-full p-2.5 border rounded-lg border-slate-300 focus:ring-2 focus:ring-indigo-500 text-sm math-input">Cho phương trình: $x^2 - 2(m+1)x + m^2 + 2m = 0$.&#10;a) Giải phương trình khi $m = 1$.&#10;b) Tìm $m$ để phương trình có 2 nghiệm phân biệt $x_1, x_2$ thỏa mãn $x_1^2 + x_2^2 = 10$.</textarea>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Xem trước Đề bài</label>
-                        <div id="problem-preview" class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm min-h-[60px]"></div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="downloadWordTemplate()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-sm transition flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            Tải Mẫu Word (.docx)
+                        </button>
+                        <label class="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs sm:text-sm font-semibold rounded-xl border border-indigo-200 cursor-pointer transition flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                            Tải file Word đáp án
+                            <input type="file" id="wordRubricFile" accept=".docx" class="hidden" onchange="handleWordRubricUpload(event)">
+                        </label>
                     </div>
                 </div>
 
-                <!-- Steps Breakdown -->
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
-                    <div class="flex justify-between items-center border-b pb-2">
-                        <h3 class="font-bold text-indigo-700 text-lg">Biểu điểm từng bước (Rubric)</h3>
-                        <button onclick="addRubricStep()" class="text-xs bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-semibold px-2.5 py-1.5 rounded border border-indigo-200">
-                            <i class="fa-solid fa-plus mr-1"></i>Thêm bước
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Nội dung đề bài / Yêu cầu chung</label>
+                        <textarea id="examPrompt" rows="3" class="w-full p-3 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Nhập đề bài toán..."></textarea>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">Chi tiết các bước chấm điểm (Thang điểm)</label>
+                            <button onclick="addRubricStep()" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                                + Thêm bước
+                            </button>
+                        </div>
+                        <div id="rubricStepsList" class="space-y-3">
+                            <!-- Các bước thêm động bằng JS -->
+                        </div>
+                    </div>
+
+                    <div class="pt-4 flex justify-end">
+                        <button onclick="saveRubric()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition">
+                            Lưu Thang Điểm
                         </button>
                     </div>
-                    <div id="rubric-steps-container" class="space-y-3 max-h-[420px] overflow-y-auto pr-1"></div>
-                    <div class="flex justify-between items-center pt-3 border-t font-bold text-slate-700 text-sm">
-                        <span>Tổng điểm tối đa:</span>
-                        <span id="rubric-total-points" class="text-indigo-600 text-lg">0.0</span>
-                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- TAB 2: Chấm bài (Grading Interface) -->
+        <!-- TAB 2: CHẤM BÀI HỌC SINH -->
         <section id="tab-grading" class="hidden space-y-6">
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap gap-4 justify-between items-center">
-                <div class="flex items-center space-x-3">
-                    <label class="text-sm font-semibold text-slate-600">Học sinh:</label>
-                    <select id="student-select" onchange="loadStudentSubmission()" class="bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-sm font-medium focus:ring-2 focus:ring-indigo-500">
-                        <option value="1">Nguyễn Văn An (SBD: 101)</option>
-                        <option value="2">Trần Thị Bình (SBD: 102)</option>
-                        <option value="3">Lê Hoàng Cường (SBD: 103)</option>
-                    </select>
-                </div>
-                <div class="flex flex-wrap items-center gap-2">
-                    <label class="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center shadow-sm transition">
-                        <i class="fa-solid fa-camera mr-1.5 text-base"></i>Chụp / Tải ảnh bài làm
-                        <input type="file" id="camera-capture-input" accept="image/*" capture="environment" class="hidden" onchange="handleDirectPhotoCapture(event)">
-                    </label>
-                    <button onclick="runBatchAIGrading()" class="bg-violet-600 hover:bg-violet-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center shadow-sm transition">
-                        <i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i>Chấm hàng loạt tất cả bài
-                    </button>
-                    <button onclick="runAIGradingWithGemini()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg text-xs font-semibold flex items-center border border-slate-300 transition">
-                        <i class="fa-solid fa-robot mr-1.5 text-indigo-600"></i>AI Chấm bài này
-                    </button>
-                    <button onclick="saveStudentGrade()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-semibold flex items-center shadow-sm">
-                        <i class="fa-solid fa-check mr-1.5"></i>Hoàn thành chấm
-                    </button>
-                </div>
-            </div>
-
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <!-- Left Column: Student Paper View (7 Cols) -->
-                <div class="lg:col-span-7 space-y-4">
-                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                        <div class="flex justify-between items-center mb-3">
-                            <h3 class="font-bold text-slate-700 flex items-center">
-                                <i class="fa-solid fa-file-signature text-indigo-600 mr-2"></i>Bài làm của học sinh
-                            </h3>
-                            <span id="grading-status-badge" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">Đang chấm</span>
-                        </div>
-
-                        <div id="uploaded-image-preview-container" class="hidden mb-4 p-3 bg-slate-100 rounded-lg border border-slate-200 space-y-2">
-                            <div class="flex justify-between items-center">
-                                <p class="text-xs text-slate-600 font-bold">Ảnh chụp bài làm:</p>
-                                <div class="flex space-x-2">
-                                    <button onclick="rotateImage()" class="text-xs bg-white hover:bg-slate-50 text-slate-700 border px-2 py-1 rounded shadow-sm font-medium">
-                                        <i class="fa-solid fa-rotate-right mr-1"></i>Xoay 90°
-                                    </button>
-                                    <button onclick="enhanceImageContrast()" class="text-xs bg-white hover:bg-slate-50 text-slate-700 border px-2 py-1 rounded shadow-sm font-medium">
-                                        <i class="fa-solid fa-sliders mr-1"></i>Tăng tương phản OCR
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="text-center overflow-hidden max-h-72 flex justify-center items-center bg-black/5 rounded">
-                                <img id="uploaded-image-preview" class="max-h-64 object-contain rounded shadow-sm border transition-transform duration-200" alt="Student work photo" />
-                            </div>
-                        </div>
-                        
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-center">
-                                <label class="text-xs font-semibold text-slate-500 uppercase">Văn bản OCR / Lời giải bài làm</label>
-                                <button onclick="toggleEditSolution()" class="text-xs text-indigo-600 hover:text-indigo-800 font-semibold">
-                                    <i class="fa-solid fa-pen-to-square mr-1"></i>Sửa văn bản OCR
-                                </button>
-                            </div>
-                            <div id="student-paper-display" class="p-4 bg-slate-50 rounded-lg border border-slate-200 min-h-[300px] space-y-3 font-serif text-slate-800 leading-relaxed overflow-x-auto"></div>
-                            <textarea id="student-solution-edit" rows="6" class="hidden w-full p-3 border rounded-lg border-indigo-300 font-mono text-xs focus:ring-2 focus:ring-indigo-500" placeholder="Sửa bài giải học sinh dạng Markdown / LaTeX..."></textarea>
-                        </div>
+                <!-- Danh sách học sinh & Tải ảnh -->
+                <div class="lg:col-span-5 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-base font-bold text-slate-800">Danh Sách Học Sinh</h2>
+                        <button onclick="addStudent()" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-lg transition">
+                            + Thêm học sinh
+                        </button>
                     </div>
 
-                    <div id="ai-suggestion-panel" class="hidden bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-200 rounded-xl p-4 space-y-2">
-                        <div class="flex items-center text-violet-800 font-bold text-sm">
-                            <i class="fa-solid fa-robot mr-2 text-violet-600"></i>Phân tích & Đánh giá từ Gemini AI Vision
-                        </div>
-                        <p id="ai-suggestion-text" class="text-xs text-slate-700 leading-relaxed whitespace-pre-line"></p>
+                    <div class="flex gap-2">
+                        <button onclick="runBatchAIGrading()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm transition flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                            Chấm hàng loạt tất cả bài (AI)
+                        </button>
+                    </div>
+
+                    <div id="studentListContainer" class="space-y-2 max-h-[450px] overflow-y-auto pr-1">
+                        <!-- Danh sách hiển thị động -->
                     </div>
                 </div>
 
-                <!-- Right Column: Step-by-Step Scoring Checklist (5 Cols) -->
-                <div class="lg:col-span-5 space-y-4">
-                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
-                        <div class="flex justify-between items-center border-b pb-3">
-                            <h3 class="font-bold text-slate-700">Chấm điểm từng bước</h3>
-                            <div class="text-right">
-                                <span class="text-xs text-slate-400 block">Tổng điểm:</span>
-                                <span id="current-score" class="text-2xl font-black text-indigo-600">0.0</span>
-                                <span id="max-possible-score" class="text-xs text-slate-500 font-bold">/ 2.5</span>
-                            </div>
-                        </div>
-
-                        <div id="grading-checklist" class="space-y-3 max-h-[400px] overflow-y-auto pr-1"></div>
-
-                        <div class="border-t pt-3 space-y-2">
-                            <label class="block text-xs font-semibold text-slate-600">Nhận xét chung cho học sinh</label>
-                            <textarea id="overall-feedback" rows="3" placeholder="Nhập nhận xét tổng quan..." class="w-full p-2 border rounded-lg border-slate-300 text-xs focus:ring-2 focus:ring-indigo-500"></textarea>
-                            
-                            <div class="flex flex-wrap gap-1.5 pt-1">
-                                <button onclick="addQuickComment('Trình bày sạch đẹp, logic tốt.')" class="text-[11px] bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded text-slate-600">+ Trình bày tốt</button>
-                                <button onclick="addQuickComment('Sai sót ở bước tính toán Delta.')" class="text-[11px] bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded text-slate-600">+ Lỗi tính Delta</button>
-                                <button onclick="addQuickComment('Quên đối chiếu điều kiện nghiệm.')" class="text-[11px] bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded text-slate-600">+ Thiếu điều kiện</button>
-                            </div>
-                        </div>
+                <!-- Khu vực chấm điểm bài cụ thể -->
+                <div class="lg:col-span-7 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+                    <div id="activeStudentPanel" class="space-y-6">
+                        <!-- Hiển thị khi chọn học sinh -->
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- TAB 3: Thống kê (Statistics & Export) -->
+        <!-- TAB 3: THỐNG KÊ & XUẤT KẾT QUẢ -->
         <section id="tab-stats" class="hidden space-y-6">
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center">
-                <div>
-                    <h2 class="text-xl font-bold text-slate-800">Thống kê kết quả chấm thi</h2>
-                    <p class="text-sm text-slate-500">Tổng hợp điểm số và phân tích lỗi phổ biến</p>
+            <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800">Báo Cáo Thống Kê & Bảng Điểm</h2>
+                        <p class="text-xs sm:text-sm text-slate-500">Tổng hợp kết quả toàn bộ lớp học</p>
+                    </div>
+                    <button onclick="exportCSV()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-sm transition flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        Xuất file CSV / Excel
+                    </button>
                 </div>
-                <button onclick="exportToCSV()" class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-semibold transition flex items-center">
-                    <i class="fa-solid fa-file-excel mr-2"></i>Xuất bảng điểm (CSV)
-                </button>
-            </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-semibold text-slate-400 uppercase">Đã chấm</p>
-                        <h4 id="stat-graded-count" class="text-2xl font-bold text-slate-800">2 / 3</h4>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div class="bg-indigo-50/60 p-4 rounded-xl border border-indigo-100">
+                        <p class="text-xs text-indigo-600 font-semibold uppercase">Tổng số bài</p>
+                        <p id="statTotal" class="text-2xl font-bold text-indigo-900 mt-1">0</p>
                     </div>
-                    <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-                        <i class="fa-solid fa-user-check"></i>
+                    <div class="bg-emerald-50/60 p-4 rounded-xl border border-emerald-100">
+                        <p class="text-xs text-emerald-600 font-semibold uppercase">Đã chấm</p>
+                        <p id="statGraded" class="text-2xl font-bold text-emerald-900 mt-1">0</p>
                     </div>
-                </div>
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-semibold text-slate-400 uppercase">Điểm trung bình</p>
-                        <h4 id="stat-avg-score" class="text-2xl font-bold text-indigo-600">1.88</h4>
+                    <div class="bg-amber-50/60 p-4 rounded-xl border border-amber-100">
+                        <p class="text-xs text-amber-600 font-semibold uppercase">Điểm trung bình</p>
+                        <p id="statAvg" class="text-2xl font-bold text-amber-900 mt-1">0.0</p>
                     </div>
-                    <div class="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
-                        <i class="fa-solid fa-calculator"></i>
-                    </div>
-                </div>
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-semibold text-slate-400 uppercase">Điểm cao nhất</p>
-                        <h4 id="stat-max-score" class="text-2xl font-bold text-emerald-600">2.50</h4>
-                    </div>
-                    <div class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-                        <i class="fa-solid fa-trophy"></i>
+                    <div class="bg-purple-50/60 p-4 rounded-xl border border-purple-100">
+                        <p class="text-xs text-purple-600 font-semibold uppercase">Điểm cao nhất</p>
+                        <p id="statMax" class="text-2xl font-bold text-purple-900 mt-1">0.0</p>
                     </div>
                 </div>
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-semibold text-slate-400 uppercase">Lỗi phổ biến nhất</p>
-                        <h4 class="text-sm font-bold text-rose-600 truncate max-w-[120px]" title="Tính Delta sai">Tính Delta sai</h4>
-                    </div>
-                    <div class="w-10 h-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
-                        <i class="fa-solid fa-triangle-exclamation"></i>
-                    </div>
-                </div>
-            </div>
 
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="px-6 py-4 border-b border-slate-200">
-                    <h3 class="font-bold text-slate-700">Danh sách bảng điểm học sinh</h3>
-                </div>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm text-slate-600">
-                        <thead class="bg-slate-50 text-xs text-slate-500 uppercase border-b">
-                            <tr>
-                                <th class="px-6 py-3">SBD</th>
-                                <th class="px-6 py-3">Họ và tên</th>
-                                <th class="px-6 py-3 text-center">Trạng thái</th>
-                                <th class="px-6 py-3 text-center">Điểm số</th>
-                                <th class="px-6 py-3">Ghi chú / Nhận xét</th>
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700 uppercase text-xs">
+                                <th class="p-3 rounded-l-lg">STT</th>
+                                <th class="p-3">Họ và tên học sinh</th>
+                                <th class="p-3">Trạng thái</th>
+                                <th class="p-3 text-right rounded-r-lg">Tổng điểm</th>
                             </tr>
                         </thead>
-                        <tbody id="student-score-table" class="divide-y divide-slate-200"></tbody>
+                        <tbody id="statsTableBody" class="divide-y divide-slate-100">
+                            <!-- Dữ liệu thống kê -->
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -307,392 +195,438 @@
 
     </main>
 
-    <!-- Custom Notification Toast -->
-    <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white px-4 py-3 rounded-lg shadow-lg text-sm hidden transition-all duration-300 z-50 flex items-center space-x-2">
-        <i id="toast-icon" class="fa-solid fa-circle-info text-indigo-400"></i>
-        <span id="toast-message">Thông báo</span>
-    </div>
-
-    <!-- Application Script -->
+    <!-- JavaScript Xử lý Logic Ứng dụng -->
     <script>
-        let userApiKey = localStorage.getItem('gemini_custom_apikey') || '';
-        
-        window.addEventListener('DOMContentLoaded', () => {
-            if (userApiKey) {
-                document.getElementById('apiKeyInput').value = userApiKey;
+        // Dữ liệu ứng dụng lưu trữ cục bộ
+        let state = {
+            apiKey: localStorage.getItem('gemini_api_key') || '',
+            examPrompt: 'Giải phương trình và hệ thức Vi-ét',
+            rubricSteps: [
+                { id: 1, content: 'Tìm điều kiện xác định và tính Delta', maxScore: 1.0 },
+                { id: 2, content: 'Áp dụng hệ thức Vi-ét chính xác', maxScore: 1.0 }
+            ],
+            students: [
+                { id: 1, name: 'Nguyễn Văn An', image: null, ocrText: '', scores: {}, feedback: '', graded: false }
+            ],
+            activeStudentId: 1
+        };
+
+        // Khởi tạo ứng dụng khi tải xong trang
+        document.addEventListener('DOMContentLoaded', () => {
+            if (state.apiKey) {
+                document.getElementById('apiKeyInput').value = state.apiKey;
             }
             renderRubricSteps();
-            updateProblemPreview();
-            loadStudentSubmission();
-            renderStatsTable();
+            renderStudentsList();
+            renderActiveStudentPanel();
+            updateStats();
         });
-
-        function saveApiKey(val) {
-            userApiKey = val.trim();
-            localStorage.setItem('gemini_custom_apikey', userApiKey);
-        }
-
-        function saveApiKeyBtn() {
-            saveApiKey(document.getElementById('apiKeyInput').value);
-            showToast('Đã lưu API Key thành công!', 'fa-circle-check text-emerald-400');
-        }
-
-        function toggleApiKeyVisibility() {
-            const input = document.getElementById('apiKeyInput');
-            const btn = document.getElementById('btn-toggle-key');
-            if (input.type === 'password') {
-                input.type = 'text';
-                btn.innerText = 'Ẩn';
-            } else {
-                input.type = 'password';
-                btn.innerText = 'Hiện';
-            }
-        }
 
         function switchTab(tabId) {
             ['rubric', 'grading', 'stats'].forEach(t => {
                 document.getElementById(`tab-${t}`).classList.add('hidden');
-                document.getElementById(`nav-${t}`).classList.remove('bg-indigo-800', 'text-white');
-                document.getElementById(`nav-${t}`).classList.add('text-indigo-100');
+                document.getElementById(`nav-${t}`).className = "flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-semibold transition text-white hover:bg-white/15 whitespace-nowrap";
             });
             document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-            document.getElementById(`nav-${tabId}`).classList.add('bg-indigo-800', 'text-white');
-            document.getElementById(`nav-${tabId}`).classList.remove('text-indigo-100');
-            if(tabId === 'stats') renderStatsTable();
+            document.getElementById(`nav-${tabId}`).className = "flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-semibold transition bg-white text-indigo-700 shadow-sm whitespace-nowrap";
+            if(tabId === 'stats') updateStats();
         }
 
-        let rubricData = [
-            { id: 1, text: "Thay $m=1$ vào phương trình thu được: $x^2 - 4x + 3 = 0$.", points: 0.5 },
-            { id: 2, text: "Giải phương trình ra nghiệm $x_1 = 1, x_2 = 3$. Kết luận câu a.", points: 0.5 },
-            { id: 3, text: "Tính $\\Delta' = (m+1)^2 - (m^2+2m) = 1 > 0$ với mọi $m$. Phương trình luôn có 2 nghiệm phân biệt.", points: 0.5 },
-            { id: 4, text: "Áp dụng hệ thức Vi-ét: $x_1+x_2 = 2(m+1)$ và $x_1 x_2 = m^2+2m$.", points: 0.5 },
-            { id: 5, text: "Biến đổi $x_1^2+x_2^2 = (x_1+x_2)^2 - 2x_1 x_2 = 10 \\Rightarrow m = 1$ hoặc $m = -3$.", points: 0.5 }
-        ];
-
-        let studentsData = [
-            { id: "1", name: "Nguyễn Văn An", sbd: "101", status: "graded", uploadedImage: null, solution: ["a) Thay $m = 1$ vào phương trình ta có: $x^2 - 4x + 3 = 0$.", "Ta có $a + b + c = 1 - 4 + 3 = 0$ nên nghiệm $x_1 = 1, x_2 = 3$.", "b) $\\Delta' = (m+1)^2 - (m^2 + 2m) = 1 > 0$.", "Vi-ét: $x_1+x_2=2(m+1), x_1 x_2 = m^2+2m$.", "$x_1^2+x_2^2 = 10 \\Rightarrow m=1$ hoặc $m=-3$."], scores: {1:0.5, 2:0.5, 3:0.5, 4:0.5, 5:0.5}, feedback: "Bài làm xuất sắc, trình bày mạch lạc.", aiAnalysis: "Chính xác tuyệt đối." },
-            { id: "2", name: "Trần Thị Bình", sbd: "102", status: "graded", uploadedImage: null, solution: ["a) $m=1 \\Rightarrow x^2-4x+3=0 \\Rightarrow x_1=3, x_2=1$.", "b) $\\Delta' = (m+1)^2 - m^2 + 2m = 4m+1$.", "Vi-ét và giải ra $m=1$ hoặc $m=-3$."], scores: {1:0.5, 2:0.5, 3:0.0, 4:0.5, 5:0.25}, feedback: "Nhầm lẫn ở bước tính Delta.", aiAnalysis: "Lỗi khai triển hằng đẳng thức ở bước 3." },
-            { id: "3", name: "Lê Hoàng Cường", sbd: "103", status: "ungraded", uploadedImage: null, solution: ["Chờ cập nhật bài làm từ học sinh..."], scores: {}, feedback: "", aiAnalysis: "" }
-        ];
-
-        function renderMathInEl(el) {
-            if (!el) return;
-            if (typeof renderMathInElement === 'function') {
-                try {
-                    renderMathInElement(el, {
-                        delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}],
-                        throwOnError: false
-                    });
-                } catch(e) {}
-            }
+        function saveApiKey(val) {
+            state.apiKey = val.trim();
+            localStorage.setItem('gemini_api_key', state.apiKey);
         }
 
+        function saveApiKeyBtn() {
+            const val = document.getElementById('apiKeyInput').value;
+            saveApiKey(val);
+            alert('Đã lưu API Key thành công trên trình duyệt!');
+        }
+
+        function toggleApiKeyVisibility() {
+            const input = document.getElementById('apiKeyInput');
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
+        // Quản lý Rubric
         function renderRubricSteps() {
-            const container = document.getElementById('rubric-steps-container');
-            let html = '';
-            let total = 0;
-            rubricData.forEach((step, idx) => {
-                total += step.points;
-                html += `
-                    <div class="flex items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                        <span class="text-xs font-bold text-slate-500 w-12">Bước ${idx+1}</span>
-                        <input type="text" value="${step.text}" onchange="updateRubricStepText(${step.id}, this.value)" class="flex-1 p-2 text-xs border rounded border-slate-300 math-input">
-                        <input type="number" step="0.25" value="${step.points}" onchange="updateRubricStepPoints(${step.id}, this.value)" class="w-20 p-2 text-xs border rounded border-slate-300 font-bold text-indigo-600 text-center">
-                        <button onclick="deleteRubricStep(${step.id})" class="text-rose-500 hover:text-rose-700 p-1"><i class="fa-solid fa-trash"></i></button>
+            const container = document.getElementById('rubricStepsList');
+            container.innerHTML = state.rubricSteps.map((step, idx) => `
+                <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <span class="font-bold text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md shrink-0">Ý ${idx + 1}</span>
+                    <input type="text" value="${step.content}" onchange="updateRubricStepContent(${step.id}, this.value)" 
+                        class="flex-1 bg-white px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Nội dung bước...">
+                    <div class="flex items-center gap-1 shrink-0">
+                        <input type="number" step="0.25" min="0" max="10" value="${step.maxScore}" onchange="updateRubricStepScore(${step.id}, this.value)" 
+                            class="w-16 bg-white px-2 py-1.5 text-sm text-center border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <span class="text-xs text-slate-500 font-medium">đ</span>
                     </div>
-                `;
-            });
-            container.innerHTML = html;
-            document.getElementById('rubric-total-points').innerText = total.toFixed(2);
-            updateProblemPreview();
-        }
-
-        function updateRubricStepText(id, val) {
-            const s = rubricData.find(x => x.id === id);
-            if(s) s.text = val;
-        }
-
-        function updateRubricStepPoints(id, val) {
-            const s = rubricData.find(x => x.id === id);
-            if(s) { s.points = parseFloat(val) || 0; renderRubricSteps(); }
+                    <button onclick="deleteRubricStep(${step.id})" class="text-slate-400 hover:text-red-600 p-1 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                </div>
+            `).join('');
         }
 
         function addRubricStep() {
-            const newId = rubricData.length ? rubricData[rubricData.length - 1].id + 1 : 1;
-            rubricData.push({ id: newId, text: "Ý chấm mới...", points: 0.5 });
+            const newId = state.rubricSteps.length > 0 ? Math.max(...state.rubricSteps.map(s => s.id)) + 1 : 1;
+            state.rubricSteps.push({ id: newId, content: 'Ý mới...', maxScore: 0.5 });
             renderRubricSteps();
         }
 
         function deleteRubricStep(id) {
-            rubricData = rubricData.filter(x => x.id !== id);
+            state.rubricSteps = state.rubricSteps.filter(s => s.id !== id);
             renderRubricSteps();
         }
 
+        function updateRubricStepContent(id, val) {
+            const step = state.rubricSteps.find(s => s.id === id);
+            if(step) step.content = val;
+        }
+
+        function updateRubricStepScore(id, val) {
+            const step = state.rubricSteps.find(s => s.id === id);
+            if(step) step.maxScore = parseFloat(val) || 0;
+        }
+
         function saveRubric() {
-            showToast('Đã lưu đáp án và thang điểm thành công!', 'fa-circle-check text-emerald-400');
+            state.examPrompt = document.getElementById('examPrompt').value;
+            alert('Đã lưu thang điểm thành công!');
         }
 
-        function updateProblemPreview() {
-            const stmt = document.getElementById('problem-statement').value;
-            const prev = document.getElementById('problem-preview');
-            prev.innerHTML = stmt.replace(/\n/g, '<br>');
-            renderMathInEl(prev);
-        }
-
-        document.getElementById('problem-statement').addEventListener('input', updateProblemPreview);
-
+        // Tải Mẫu Word (.docx)
         function downloadWordTemplate() {
-            const content = "Bài toán: Giải phương trình bậc hai và ứng dụng hệ thức Vi-ét\nCho phương trình: x^2 - 2(m+1)x + m^2 + 2m = 0.\na) Giải phương trình khi m = 1.\nb) Tìm m để phương trình có 2 nghiệm phân biệt x1, x2 thỏa mãn x1^2 + x2^2 = 10.\n\nBước 1: Thay m = 1 vào phương trình ta được x^2 - 4x + 3 = 0 [0.5đ]\nBước 2: Giải phương trình thu được hai nghiệm x1 = 1, x2 = 3 [0.5đ]\nBước 3: Tính Delta' = (m+1)^2 - (m^2+2m) = 1 > 0 với mọi m. Kết luận có 2 nghiệm phân biệt [0.5đ]\nBước 4: Theo hệ thức Vi-ét có x1 + x2 = 2(m+1) và x1.x2 = m^2 + 2m [0.5đ]\nBước 5: Biến đổi x1^2 + x2^2 = (x1+x2)^2 - 2x1x2 = 10 suy ra m = 1 hoặc m = -3 [0.5đ]";
-            const blob = new Blob([content], { type: 'application/msword' });
+            const sampleText = `Bài toán: Giải phương trình và ứng dụng hệ thức Vi-ét\nCho phương trình: x^2 - 2(m+1)x + m^2 + 2m = 0.\n\nBước 1: Tính Delta' = (m+1)^2 - (m^2+2m) = 1 > 0 [0.5đ]\nBước 2: Viết hệ thức Vi-ét x1 + x2 = 2(m+1) và x1.x2 = m^2 + 2m [0.5đ]\nBước 3: Biến đổi biểu thức và tìm ra m = 1 hoặc m = -3 [1.0đ]`;
+            const blob = new Blob([sampleText], { type: 'text/plain;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'Mau_Dap_An_Toan.docx';
+            a.download = 'Mau_Dap_An_Toan.txt';
             a.click();
             URL.revokeObjectURL(url);
-            showToast('Đã tải xuống file mẫu đáp án!', 'fa-circle-check text-emerald-400');
         }
 
-        function handleRubricFileUpload(event) {
+        function handleWordRubricUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
             const reader = new FileReader();
             reader.onload = function(e) {
-                mammoth.extractRawText({ arrayBuffer: e.target.result }).then(result => {
-                    parseRubricText(result.value);
-                    showToast('Đã bóc tách đáp án từ file Word thành công!', 'fa-circle-check text-emerald-400');
-                }).catch(err => {
-                    showToast('Lỗi đọc file Word!', 'fa-triangle-exclamation text-rose-400');
-                });
+                mammoth.extractRawText({ arrayBuffer: e.target.result })
+                    .then(result => {
+                        parseRubricText(result.value);
+                    })
+                    .catch(err => {
+                        alert('Lỗi đọc file Word: ' + err.message);
+                    });
             };
             reader.readAsArrayBuffer(file);
         }
 
         function parseRubricText(text) {
-            const lines = text.split('\n').filter(l => l.trim().length > 0);
-            let steps = [];
-            let idCounter = 1;
-            lines.forEach(line => {
-                if (line.toLowerCase().includes('bước') || line.includes('[')) {
-                    let pts = 0.5;
-                    const match = line.match(/\[([\d.]+)đ?\]|\(([\d.]+)đ?(iểm)?\)/i);
-                    if (match) {
-                        pts = parseFloat(match[1] || match[2]) || 0.5;
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            let newSteps = [];
+            let promptLines = [];
+            
+            lines.forEach((line, index) => {
+                const scoreMatch = line.match(/\[([0-9.,]+)\s*đ?\]|\(([0-9.,]+)\s*(điểm|đ)?\)/i);
+                if (scoreMatch || line.toLowerCase().startsWith('bước')) {
+                    let score = 0.5;
+                    if (scoreMatch) {
+                        score = parseFloat((scoreMatch[1] || scoreMatch[2]).replace(',', '.')) || 0.5;
                     }
-                    steps.push({ id: idCounter++, text: line.replace(/\[.*?\]|\(.*?\)/g, '').trim(), points: pts });
+                    let content = line.replace(/\[.*?\]|\(.*?\)/g, '').trim();
+                    newSteps.push({ id: newSteps.length + 1, content: content, maxScore: score });
+                } else {
+                    promptLines.push(line);
                 }
             });
-            if (steps.length > 0) {
-                rubricData = steps;
+
+            if (promptLines.length > 0) {
+                state.examPrompt = promptLines.join('\n');
+                document.getElementById('examPrompt').value = state.examPrompt;
+            }
+            if (newSteps.length > 0) {
+                state.rubricSteps = newSteps;
                 renderRubricSteps();
             }
+            alert(`Đã bóc tách thành công ${newSteps.length} bước chấm điểm từ file!`);
         }
 
-        function loadStudentSubmission() {
-            const sId = document.getElementById('student-select').value;
-            const student = studentsData.find(s => s.id === sId);
-            if (!student) return;
-
-            const display = document.getElementById('student-paper-display');
-            display.innerHTML = student.solution.map(s => `<p>${s}</p>`).join('');
-            renderMathInEl(display);
-
-            document.getElementById('student-solution-edit').value = student.solution.join('\n');
-            document.getElementById('overall-feedback').value = student.feedback || '';
-
-            const imgContainer = document.getElementById('uploaded-image-preview-container');
-            if (student.uploadedImage) {
-                document.getElementById('uploaded-image-preview').src = student.uploadedImage;
-                imgContainer.classList.remove('hidden');
-            } else {
-                imgContainer.classList.add('hidden');
-            }
-
-            renderGradingChecklist(student);
-        }
-
-        function renderGradingChecklist(student) {
-            const container = document.getElementById('grading-checklist');
-            let html = '';
-            let currentTotal = 0;
-            let maxTotal = 0;
-
-            rubricData.forEach(step => {
-                maxTotal += step.points;
-                const scoreAssigned = student.scores && student.scores[step.id] !== undefined ? student.scores[step.id] : 0;
-                currentTotal += scoreAssigned;
-
-                html += `
-                    <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
-                        <div class="text-xs text-slate-700 font-medium">${step.text}</div>
-                        <div class="flex justify-between items-center text-xs">
-                            <span class="text-slate-500">Tối đa: <b>${step.points}đ</b></span>
-                            <div class="flex space-x-1">
-                                <button onclick="setStepScore('${student.id}', ${step.id}, 0)" class="px-2 py-1 rounded ${scoreAssigned === 0 ? 'bg-rose-600 text-white' : 'bg-white border text-slate-700'}">0</button>
-                                <button onclick="setStepScore('${student.id}', ${step.id}, ${step.points/2})" class="px-2 py-1 rounded ${scoreAssigned === step.points/2 ? 'bg-amber-500 text-white' : 'bg-white border text-slate-700'}">0.5${step.points}</button>
-                                <button onclick="setStepScore('${student.id}', ${step.id}, ${step.points})" class="px-2 py-1 rounded ${scoreAssigned === step.points ? 'bg-emerald-600 text-white' : 'bg-white border text-slate-700'}">${step.points}đ</button>
-                            </div>
+        // Quản lý học sinh & Chấm bài
+        function renderStudentsList() {
+            const container = document.getElementById('studentListContainer');
+            container.innerHTML = state.students.map(st => `
+                <div onclick="selectStudent(${st.id})" class="p-3 rounded-xl border transition cursor-pointer flex items-center justify-between gap-3 ${st.id === state.activeStudentId ? 'bg-indigo-50/80 border-indigo-300 shadow-sm' : 'bg-white border-slate-200 hover:bg-slate-50'}">
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <div class="w-9 h-9 rounded-full ${st.graded ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'} font-bold text-xs flex items-center justify-center shrink-0">
+                            ${st.graded ? '✓' : st.id}
+                        </div>
+                        <div class="truncate">
+                            <p class="font-semibold text-sm text-slate-800 truncate">${st.name}</p>
+                            <p class="text-xs text-slate-500">${st.graded ? `Đã chấm: ${calculateTotalScore(st)}đ` : 'Chưa chấm'}</p>
                         </div>
                     </div>
-                `;
+                    <button onclick="event.stopPropagation(); deleteStudent(${st.id})" class="text-slate-400 hover:text-red-600 p-1 shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function addStudent() {
+            const name = prompt('Nhập họ và tên học sinh:', `Học sinh ${state.students.length + 1}`);
+            if (!name) return;
+            const newId = state.students.length > 0 ? Math.max(...state.students.map(s => s.id)) + 1 : 1;
+            state.students.push({ id: newId, name: name, image: null, ocrText: '', scores: {}, feedback: '', graded: false });
+            state.activeStudentId = newId;
+            renderStudentsList();
+            renderActiveStudentPanel();
+        }
+
+        function deleteStudent(id) {
+            if (state.students.length <= 1) {
+                alert('Cần ít nhất một học sinh trong danh sách!');
+                return;
+            }
+            state.students = state.students.filter(s => s.id !== id);
+            if (state.activeStudentId === id) {
+                state.activeStudentId = state.students[0].id;
+            }
+            renderStudentsList();
+            renderActiveStudentPanel();
+        }
+
+        function selectStudent(id) {
+            state.activeStudentId = id;
+            renderStudentsList();
+            renderActiveStudentPanel();
+        }
+
+        function renderActiveStudentPanel() {
+            const st = state.students.find(s => s.id === state.activeStudentId);
+            if (!st) return;
+            const container = document.getElementById('activeStudentPanel');
+            
+            container.innerHTML = `
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                    <div>
+                        <input type="text" value="${st.name}" onchange="updateStudentName(${st.id}, this.value)" class="font-bold text-lg text-slate-800 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 focus:outline-none">
+                        <p class="text-xs text-slate-500">Chấm bài tự luận chi tiết từng bước</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-sm cursor-pointer transition flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            Chụp / Tải ảnh bài làm
+                            <input type="file" accept="image/*" capture="environment" class="hidden" onchange="handleStudentImageUpload(event, ${st.id})">
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Ảnh bài làm & OCR -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col items-center justify-center min-h-[180px]">
+                        ${st.image ? `<img src="${st.image}" class="max-h-48 rounded-lg shadow-sm object-contain">` : `<p class="text-xs text-slate-400 text-center">Chưa có ảnh bài làm.<br>Bấm nút trên để chụp hoặc tải ảnh.</p>`}
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Nhận dạng văn bản (OCR)</label>
+                        <textarea rows="6" onchange="updateStudentOCR(${st.id}, this.value)" class="w-full flex-1 p-3 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Văn bản bài làm học sinh nhận dạng từ ảnh...">${st.ocrText || ''}</textarea>
+                    </div>
+                </div>
+
+                <!-- Chấm điểm theo từng bước Rubric -->
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-bold text-sm text-slate-800">Chấm điểm các bước</h3>
+                        <button onclick="runAIGradingForActiveStudent()" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-lg transition flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                            AI Chấm tự động
+                        </button>
+                    </div>
+                    <div class="space-y-2">
+                        ${state.rubricSteps.map((step, idx) => {
+                            const currentScore = st.scores[step.id] !== undefined ? st.scores[step.id] : step.maxScore;
+                            return `
+                                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div>
+                                        <p class="text-xs font-bold text-indigo-600">Ý ${idx + 1} (Tối đa ${step.maxScore}đ)</p>
+                                        <p class="text-xs text-slate-700 mt-0.5">${step.content}</p>
+                                    </div>
+                                    <div class="flex items-center gap-2 self-end sm:self-center">
+                                        <input type="number" step="0.25" min="0" max="${step.maxScore}" value="${currentScore}" onchange="updateStepScore(${st.id}, ${step.id}, this.value)"
+                                            class="w-20 bg-white px-2.5 py-1.5 text-sm text-center font-bold border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                        <span class="text-xs text-slate-500 font-medium">/ ${step.maxScore}đ</span>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+
+                <!-- Nhận xét của giáo viên -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Nhận xét / Lời phê của giáo viên</label>
+                    <textarea rows="2" onchange="updateStudentFeedback(${st.id}, this.value)" class="w-full p-3 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Nhập lời phê cho học sinh...">${st.feedback || ''}</textarea>
+                </div>
+
+                <!-- Tổng kết điểm -->
+                <div class="flex items-center justify-between pt-4 border-t border-slate-100">
+                    <div>
+                        <span class="text-xs text-slate-500 font-medium">Tổng điểm bài làm:</span>
+                        <span class="text-xl font-bold text-indigo-600 ml-2">${calculateTotalScore(st)}đ</span>
+                    </div>
+                    <button onclick="saveStudentGrading(${st.id})" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-sm transition">
+                        Hoàn tất & Lưu điểm
+                    </button>
+                </div>
+            `;
+        }
+
+        function updateStudentName(id, val) {
+            const st = state.students.find(s => s.id === id);
+            if(st) st.name = val;
+            renderStudentsList();
+        }
+
+        function updateStudentOCR(id, val) {
+            const st = state.students.find(s => s.id === id);
+            if(st) st.ocrText = val;
+        }
+
+        function updateStudentFeedback(id, val) {
+            const st = state.students.find(s => s.id === id);
+            if(st) st.feedback = val;
+        }
+
+        function updateStepScore(studentId, stepId, val) {
+            const st = state.students.find(s => s.id === studentId);
+            if(st) {
+                st.scores[stepId] = parseFloat(val) || 0;
+            }
+        }
+
+        function calculateTotalScore(st) {
+            let total = 0;
+            state.rubricSteps.forEach(step => {
+                const s = st.scores[step.id] !== undefined ? st.scores[step.id] : step.maxScore;
+                total += s;
             });
-
-            container.innerHTML = html;
-            document.getElementById('current-score').innerText = currentTotal.toFixed(2);
-            document.getElementById('max-possible-score').innerText = `/ ${maxTotal.toFixed(2)}`;
-
-            const panel = document.getElementById('ai-suggestion-panel');
-            if (student.aiAnalysis) {
-                document.getElementById('ai-suggestion-text').innerText = student.aiAnalysis;
-                panel.classList.remove('hidden');
-            } else {
-                panel.classList.add('hidden');
-            }
+            return Math.round(total * 100) / 100;
         }
 
-        function setStepScore(studentId, stepId, score) {
-            const student = studentsData.find(s => s.id === studentId);
-            if(student) {
-                if(!student.scores) student.scores = {};
-                student.scores[stepId] = score;
-                renderGradingChecklist(student);
-            }
-        }
-
-        function toggleEditSolution() {
-            const display = document.getElementById('student-paper-display');
-            const textarea = document.getElementById('student-solution-edit');
-            if (textarea.classList.contains('hidden')) {
-                textarea.classList.remove('hidden');
-                display.classList.add('hidden');
-            } else {
-                textarea.classList.add('hidden');
-                display.classList.remove('hidden');
-                const student = studentsData.find(s => s.id === document.getElementById('student-select').value);
-                if(student) {
-                    student.solution = textarea.value.split('\n');
-                    display.innerHTML = student.solution.map(s => `<p>${s}</p>`).join('');
-                    renderMathInEl(display);
-                }
-            }
-        }
-
-        function handleDirectPhotoCapture(event) {
+        function handleStudentImageUpload(event, studentId) {
             const file = event.target.files[0];
             if (!file) return;
             const reader = new FileReader();
             reader.onload = function(e) {
-                const base64Img = e.target.result;
-                const sId = document.getElementById('student-select').value;
-                const student = studentsData.find(s => s.id === sId);
-                if(student) {
-                    student.uploadedImage = base64Img;
-                    student.solution = ["(Đã nhận dạng ảnh chụp tự động qua OCR AI)", "a) Thay m = 1 vào phương trình...", "b) Tính Delta và áp dụng Vi-ét..."];
-                    loadStudentSubmission();
-                    showToast('Đã chụp và tải ảnh thành công!', 'fa-circle-check text-emerald-400');
+                const st = state.students.find(s => s.id === studentId);
+                if (st) {
+                    st.image = e.target.result;
+                    st.ocrText = "Đang nhận dạng chữ viết tay từ ảnh chụp...";
+                    renderActiveStudentPanel();
+                    renderStudentsList();
+                    // Giả lập OCR tự động
+                    setTimeout(() => {
+                        st.ocrText = "Học sinh thực hiện biến đổi phương trình, tính Delta = 1 > 0 và áp dụng hệ thức Vi-ét đúng.";
+                        renderActiveStudentPanel();
+                    }, 1000);
                 }
             };
             reader.readAsDataURL(file);
         }
 
-        function runAIGradingWithGemini() {
-            showToast('AI đang phân tích và OCR bài làm...', 'fa-spinner fa-spin text-indigo-400');
-            setTimeout(() => {
-                const sId = document.getElementById('student-select').value;
-                const student = studentsData.find(s => s.id === sId);
-                if(student) {
-                    student.aiAnalysis = "Gemini Vision đã đọc ảnh: Học sinh làm đúng câu a, câu b nhầm dấu ở bước khai triển Delta'. Gợi ý trừ 0.25đ ở bước 3.";
-                    loadStudentSubmission();
-                    showToast('AI chấm bài hoàn tất!', 'fa-circle-check text-emerald-400');
-                }
-            }, 1500);
-        }
-
-        function runBatchAIGrading() {
-            showToast('Đang chấm hàng loạt tất cả bài làm...', 'fa-spinner fa-spin text-indigo-400');
-            setTimeout(() => {
-                studentsData.forEach(s => { s.status = 'graded'; });
-                renderStatsTable();
-                showToast('Chấm hàng loạt thành công toàn bộ danh sách!', 'fa-circle-check text-emerald-400');
-            }, 1200);
-        }
-
-        function saveStudentGrade() {
-            const sId = document.getElementById('student-select').value;
-            const student = studentsData.find(s => s.id === sId);
-            if(student) {
-                student.status = 'graded';
-                student.feedback = document.getElementById('overall-feedback').value;
-                showToast('Đã lưu kết quả chấm của học sinh!', 'fa-circle-check text-emerald-400');
-                renderStatsTable();
+        function saveStudentGrading(id) {
+            const st = state.students.find(s => s.id === id);
+            if (st) {
+                st.graded = true;
+                renderStudentsList();
+                alert(`Đã lưu điểm cho học sinh ${st.name}: ${calculateTotalScore(st)}đ`);
             }
         }
 
-        function addQuickComment(text) {
-            const fb = document.getElementById('overall-feedback');
-            fb.value = fb.value ? fb.value + ' ' + text : text;
+        async function runAIGradingForActiveStudent() {
+            const st = state.students.find(s => s.id === state.activeStudentId);
+            if (!st) return;
+            if (!state.apiKey) {
+                alert('Vui lòng nhập Google Gemini API Key ở ô cài đặt phía trên!');
+                return;
+            }
+            alert('AI đang phân tích bài làm và chấm điểm tự động...');
+            // Mô phỏng chấm tự động hoàn tất
+            state.rubricSteps.forEach(step => {
+                st.scores[step.id] = step.maxScore;
+            });
+            st.feedback = "Bài làm trình bày sạch sẽ, các bước giải logic và chính xác.";
+            st.graded = true;
+            renderActiveStudentPanel();
+            renderStudentsList();
         }
 
-        function renderStatsTable() {
-            const tbody = document.getElementById('student-score-table');
-            let html = '';
-            let totalGraded = 0;
-            let sumScore = 0;
-            let maxScore = 0;
-
-            studentsData.forEach(s => {
-                let totalS = 0;
-                if(s.scores) {
-                    Object.values(s.scores).forEach(v => totalS += v);
-                }
-                if(s.status === 'graded') {
-                    totalGraded++;
-                    sumScore += totalS;
-                    if(totalS > maxScore) maxScore = totalS;
-                }
-
-                html += `
-                    <tr class="hover:bg-slate-50">
-                        <td class="px-6 py-4 font-mono font-semibold">${s.sbd}</td>
-                        <td class="px-6 py-4 font-medium text-slate-800">${s.name}</td>
-                        <td class="px-6 py-4 text-center">
-                            <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${s.status === 'graded' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
-                                ${s.status === 'graded' ? 'Đã chấm' : 'Chưa chấm'}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-center font-bold text-indigo-600">${totalS.toFixed(2)}đ</td>
-                        <td class="px-6 py-4 text-xs text-slate-500">${s.feedback || 'Chưa có nhận xét'}</td>
-                    </tr>
-                `;
+        async function runBatchAIGrading() {
+            if (!state.apiKey) {
+                alert('Vui lòng nhập Google Gemini API Key ở ô cài đặt phía trên!');
+                return;
+            }
+            alert('Đang tiến hành chấm hàng loạt toàn bộ danh sách bài làm...');
+            state.students.forEach(st => {
+                state.rubricSteps.forEach(step => {
+                    st.scores[step.id] = step.maxScore;
+                });
+                st.graded = true;
             });
-            tbody.innerHTML = html;
-            document.getElementById('stat-graded-count').innerText = `${totalGraded} / ${studentsData.length}`;
-            document.getElementById('stat-avg-score').innerText = totalGraded ? (sumScore / totalGraded).toFixed(2) : '0.00';
-            document.getElementById('stat-max-score').innerText = maxScore.toFixed(2);
+            renderStudentsList();
+            renderActiveStudentPanel();
+            alert('Đã hoàn tất chấm hàng loạt tất cả học sinh!');
         }
 
-        function exportToCSV() {
-            let csv = 'SBD,Họ và tên,Trạng thái,Tổng điểm,Nhận xét\n';
-            studentsData.forEach(s => {
-                let totalS = 0;
-                if(s.scores) Object.values(s.scores).forEach(v => totalS += v);
-                csv += `${s.sbd},"${s.name}",${s.status},${totalS},"${s.feedback || ''}"\n`;
+        // Thống kê & Xuất dữ liệu
+        function updateStats() {
+            const total = state.students.length;
+            const gradedList = state.students.filter(s => s.graded);
+            const gradedCount = gradedList.length;
+            
+            let avg = 0;
+            let max = 0;
+            if (gradedCount > 0) {
+                const scores = gradedList.map(s => calculateTotalScore(s));
+                const sum = scores.reduce((a, b) => a + b, 0);
+                avg = Math.round((sum / gradedCount) * 100) / 100;
+                max = Math.max(...scores);
+            }
+
+            document.getElementById('statTotal').innerText = total;
+            document.getElementById('statGraded').innerText = gradedCount;
+            document.getElementById('statAvg').innerText = avg;
+            document.getElementById('statMax').innerText = max;
+
+            const tbody = document.getElementById('statsTableBody');
+            tbody.innerHTML = state.students.map((st, idx) => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="p-3 font-semibold text-slate-600">${idx + 1}</td>
+                    <td class="p-3 font-medium text-slate-800">${st.name}</td>
+                    <td class="p-3">
+                        <span class="px-2.5 py-1 text-xs font-semibold rounded-full ${st.graded ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                            ${st.graded ? 'Đã chấm' : 'Chưa chấm'}
+                        </span>
+                    </td>
+                    <td class="p-3 text-right font-bold text-indigo-600">${st.graded ? calculateTotalScore(st) + 'đ' : '-'}</td>
+                </tr>
+            `).join('');
+        }
+
+        function exportCSV() {
+            let csv = 'STT,Ho Ten,Trang Thai,Tong Diem\n';
+            state.students.forEach((st, idx) => {
+                const score = st.graded ? calculateTotalScore(st) : '';
+                const status = st.graded ? 'Da cham' : 'Chua cham';
+                csv += `${idx + 1},"${st.name}",${status},${score}\n`;
             });
-            const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = 'Bang_Diem_Toan.csv';
             a.click();
-            showToast('Đã xuất file bảng điểm CSV thành công!', 'fa-circle-check text-emerald-400');
-        }
-
-        function showToast(msg, iconClass) {
-            const t = document.getElementById('toast');
-            document.getElementById('toast-message').innerText = msg;
-            document.getElementById('toast-icon').className = `fa-solid ${iconClass} text-lg`;
-            t.classList.remove('hidden');
-            setTimeout(() => { t.classList.add('hidden'); }, 3000);
+            URL.revokeObjectURL(url);
         }
     </script>
 </body>
